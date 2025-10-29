@@ -12,6 +12,7 @@ namespace: nacf
 # Resources
 resources:
   - namespace.yaml
+  - serviceaccounts.yaml
   - redis/service.yaml
   - redis/statefulset.yaml
   - postgres/statefulset.yaml

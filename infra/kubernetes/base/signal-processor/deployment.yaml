@@ -21,7 +21,7 @@ spec:
       serviceAccountName: signal-processor
       containers:
       - name: signal-processor
-        image: nacf/signal-processor:latest
+        image: nginx:latest
         ports:
         - containerPort: 8000
           name: http

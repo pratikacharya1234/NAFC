@@ -21,7 +21,7 @@ spec:
       serviceAccountName: model-inference
       containers:
       - name: model-inference
-        image: nacf/model-inference:latest
+        image: nginx:latest
         ports:
         - containerPort: 8001
           name: http

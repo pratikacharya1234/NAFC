@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NACF Integration Example</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; }
+        input, textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .result { margin-top: 20px; padding: 10px; border-radius: 4px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>NACF Neural Authentication Integration</h1>
+
+    <div class="form-group">
+        <label for="apiKey">API Key:</label>
+        <input type="text" id="apiKey" placeholder="Enter your NACF API key">
+    </div>
+
+    <div class="form-group">
+        <label for="baseURL">Base URL:</label>
+        <input type="text" id="baseURL" value="http://localhost:8080" placeholder="NACF API base URL">
+    </div>
+
+    <button onclick="initializeClient()">Initialize Client</button>
+
+    <hr>
+
+    <h2>User Registration</h2>
+    <div class="form-group">
+        <label for="regUserId">User ID:</label>
+        <input type="text" id="regUserId" placeholder="user123">
+    </div>
+    <div class="form-group">
+        <label for="regNeuralData">Neural Profile (JSON):</label>
+        <textarea id="regNeuralData" rows="6">{
+  "signal_type": "EEG",
+  "data": [0.1, 0.2, 0.3, 0.4, 0.5],
+  "timestamp": "2025-10-28T12:00:00Z",
+  "metadata": {
+    "device": "Muse2",
+    "sampling_rate": 256
+  }
+}</textarea>
+    </div>
+    <button onclick="registerUser()">Register User</button>
+
+    <hr>
+
+    <h2>User Authentication</h2>
+    <div class="form-group">
+        <label for="authUserId">User ID:</label>
+        <input type="text" id="authUserId" placeholder="user123">
+    </div>
+    <div class="form-group">
+        <label for="authNeuralData">Neural Signals (JSON):</label>
+        <textarea id="authNeuralData" rows="6">{
+  "signal_type": "EEG",
+  "data": [0.15, 0.25, 0.35, 0.45, 0.55],
+  "timestamp": "2025-10-28T12:01:00Z",
+  "metadata": {
+    "device": "Muse2",
+    "sampling_rate": 256
+  }
+}</textarea>
+    </div>
+    <button onclick="authenticateUser()">Authenticate User</button>
+
+    <div id="result" class="result" style="display: none;"></div>
+
+    <script src="src/nacf-sdk.js"></script>
+    <script>
+        let nacfClient = null;
+
+        function initializeClient() {
+            const apiKey = document.getElementById('apiKey').value;
+            const baseURL = document.getElementById('baseURL').value;
+
+            if (!apiKey || !baseURL) {
+                showResult('Please enter both API key and base URL', 'error');
+                return;
+            }
+
+            try {
+                nacfClient = new NACFClient({
+                    baseURL: baseURL,
+                    apiKey: apiKey,
+                    debug: true
+                });
+                showResult('NACF client initialized successfully!', 'success');
+            } catch (error) {
+                showResult(`Initialization failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function registerUser() {
+            if (!nacfClient) {
+                showResult('Please initialize the client first', 'error');
+                return;
+            }
+
+            const userId = document.getElementById('regUserId').value;
+            const neuralDataText = document.getElementById('regNeuralData').value;
+
+            if (!userId || !neuralDataText) {
+                showResult('Please fill in all registration fields', 'error');
+                return;
+            }
+
+            try {
+                const neuralData = JSON.parse(neuralDataText);
+                const result = await nacfClient.registerUser(userId, neuralData);
+                showResult(`Registration successful: ${JSON.stringify(result, null, 2)}`, 'success');
+            } catch (error) {
+                showResult(`Registration failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function authenticateUser() {
+            if (!nacfClient) {
+                showResult('Please initialize the client first', 'error');
+                return;
+            }
+
+            const userId = document.getElementById('authUserId').value;
+            const neuralDataText = document.getElementById('authNeuralData').value;
+
+            if (!userId || !neuralDataText) {
+                showResult('Please fill in all authentication fields', 'error');
+                return;
+            }
+
+            try {
+                const neuralData = JSON.parse(neuralDataText);
+                const result = await nacfClient.authenticateUser(userId, neuralData);
+                showResult(`Authentication result: ${JSON.stringify(result, null, 2)}`, 'success');
+            } catch (error) {
+                showResult(`Authentication failed: ${error.message}`, 'error');
+            }
+        }
+
+        function showResult(message, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = message;
+            resultDiv.className = `result ${type}`;
+            resultDiv.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NACF Neural Authentication Demo</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border-left: 4px solid #3498db;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .section h2 {
+            color: #2c3e50;
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+
+        .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background: #2980b9;
+        }
+
+        .btn-success {
+            background: #27ae60;
+        }
+
+        .btn-success:hover {
+            background: #229954;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            display: none;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .icon {
+            width: 20px;
+            height: 20px;
+            display: inline-block;
+            background-size: contain;
+            background-repeat: no-repeat;
+            vertical-align: middle;
+        }
+
+        .icon-brain {
+            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%233498db"><path d="M12 2C13.1 2 14 2.9 14 4V5.08C15.16 5.57 16.5 6.25 16.5 7.5C16.5 8.75 15.16 9.43 14 9.92V11H16V13H14V14.08C15.16 14.57 16.5 15.25 16.5 16.5C16.5 17.75 15.16 18.43 14 18.92V20C14 21.1 13.1 22 12 22S10 21.1 10 20V18.92C8.84 18.43 7.5 17.75 7.5 16.5C7.5 15.25 8.84 14.57 10 14.08V13H8V11H10V9.92C8.84 9.43 7.5 8.75 7.5 7.5C7.5 6.25 8.84 5.57 10 5.08V4C10 2.9 10.9 2 12 2M12 4V7H13.5C13.78 7 14 7.22 14 7.5S13.78 8 13.5 8H12V11H14V13H12V16H13.5C13.78 16 14 16.22 14 16.5S13.78 17 13.5 17H12V20H13.5C13.78 20 14 20.22 14 20.5S13.78 21 13.5 21H10.5C10.22 21 10 20.78 10 20.5S10.22 20 10.5 20H12V17H10.5C10.22 17 10 16.78 10 16.5S10.22 16 10.5 16H12V13H10V11H12V8H10.5C10.22 8 10 7.78 10 7.5S10.22 7 10.5 7H12V4Z"/></svg>');
+        }
+
+        .icon-key {
+            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%233498db"><path d="M7 14C5.9 14 5 13.1 5 12S5.9 10 7 10 9 10.9 9 12 8.1 14 7 14M12.6 10C11.8 7.7 9.6 6 7 6S2.2 7.7 1.4 10H0V12H1.4C2.2 14.3 4.4 16 7 16S11.8 14.3 12.6 12H22V10H12.6Z"/></svg>');
+        }
+
+        .icon-shield {
+            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%233498db"><path d="M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1M10,17L6,13L7.41,11.59L10,14.17L16.59,7.58L18,9L10,17Z"/></svg>');
+        }
+
+        .icon-code {
+            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%233498db"><path d="M14.6,16.6L19.2,12L14.6,7.4L16,6L22,12L16,18L14.6,16.6M9.4,16.6L4.8,12L9.4,7.4L8,6L2,12L8,18L9.4,16.6Z"/></svg>');
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>
+            <span class="icon icon-brain"></span>
+            NACF Neural Authentication Demo
+        </h1>
+
+        <div class="section">
+            <h2>
+                <span class="icon icon-shield"></span>
+                Overview
+            </h2>
+            <p>This demo shows how to integrate NACF (Neural Authentication Control Framework) into your web application. NACF provides secure neural-based authentication using biometric signals.</p>
+        </div>
+
+        <div class="section">
+            <h2>
+                <span class="icon icon-key"></span>
+                API Configuration
+            </h2>
+            <p>First, configure your NACF API endpoint and authentication key:</p>
+            <div class="code-block">
+// NACF API Configuration
+const NACF_CONFIG = {
+    baseURL: 'https://your-nacf-gateway.com', // Replace with your Kong gateway URL
+    apiKey: 'your-api-key-here' // Get this from NACF admin
+};
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>
+                <span class="icon icon-code"></span>
+                User Registration
+            </h2>
+            <p>Register a new user with their neural profile:</p>
+
+            <div class="form-group">
+                <label for="userId">User ID:</label>
+                <input type="text" id="userId" placeholder="Enter user ID">
+            </div>
+
+            <div class="form-group">
+                <label for="neuralData">Neural Data (JSON):</label>
+                <textarea id="neuralData" rows="4" placeholder='{
+  "signal_type": "EEG",
+  "data": [0.1, 0.2, 0.3, ...],
+  "timestamp": "2025-10-28T12:00:00Z"
+}'></textarea>
+            </div>
+
+            <button class="btn btn-success" onclick="registerUser()">
+                <span class="icon icon-shield"></span>
+                Register User
+            </button>
+
+            <div id="registerStatus" class="status"></div>
+        </div>
+
+        <div class="section">
+            <h2>
+                <span class="icon icon-code"></span>
+                User Authentication
+            </h2>
+            <p>Authenticate a user using their neural signals:</p>
+
+            <div class="form-group">
+                <label for="authUserId">User ID:</label>
+                <input type="text" id="authUserId" placeholder="Enter user ID to authenticate">
+            </div>
+
+            <div class="form-group">
+                <label for="authNeuralData">Authentication Neural Data (JSON):</label>
+                <textarea id="authNeuralData" rows="4" placeholder='{
+  "signal_type": "EEG",
+  "data": [0.15, 0.25, 0.35, ...],
+  "timestamp": "2025-10-28T12:01:00Z"
+}'></textarea>
+            </div>
+
+            <button class="btn" onclick="authenticateUser()">
+                <span class="icon icon-brain"></span>
+                Authenticate User
+            </button>
+
+            <div id="authStatus" class="status"></div>
+        </div>
+
+        <div class="section">
+            <h2>
+                <span class="icon icon-code"></span>
+                Implementation Code
+            </h2>
+            <p>Here's the complete JavaScript implementation:</p>
+            <div class="code-block">
+// NACF Neural Authentication SDK
+class NACFClient {
+    constructor(config) {
+        this.baseURL = config.baseURL;
+        this.apiKey = config.apiKey;
+    }
+
+    async registerUser(userId, neuralData) {
+        const response = await fetch(`${this.baseURL}/api/v1/auth`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'apikey': this.apiKey
+            },
+            body: JSON.stringify({
+                action: 'register',
+                user_id: userId,
+                neural_profile: neuralData
+            })
+        });
+
+        return response.json();
+    }
+
+    async authenticateUser(userId, neuralData) {
+        const response = await fetch(`${this.baseURL}/api/v1/auth`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'apikey': this.apiKey
+            },
+            body: JSON.stringify({
+                action: 'authenticate',
+                user_id: userId,
+                neural_signals: neuralData
+            })
+        });
+
+        return response.json();
+    }
+
+    async processSignals(signals) {
+        const response = await fetch(`${this.baseURL}/api/v1/process`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'apikey': this.apiKey
+            },
+            body: JSON.stringify({
+                signals: signals
+            })
+        });
+
+        return response.json();
+    }
+}
+
+// Initialize NACF Client
+const nacf = new NACFClient(NACF_CONFIG);
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📋 Setup Instructions</h2>
+            <ol>
+                <li>Deploy NACF system using Kubernetes manifests</li>
+                <li>Configure Kong API gateway with your domain</li>
+                <li>Generate API keys through NACF admin interface</li>
+                <li>Update the NACF_CONFIG in your application</li>
+                <li>Integrate neural signal capture (EEG, ECG, etc.)</li>
+                <li>Test authentication flow</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        // NACF API Configuration (Replace with your actual values)
+        const NACF_CONFIG = {
+            baseURL: 'http://localhost:8080', // Kong gateway URL
+            apiKey: 'demo-api-key' // Replace with actual API key
+        };
+
+        // Initialize NACF Client
+        const nacf = new NACFClient(NACF_CONFIG);
+
+        async function registerUser() {
+            const userId = document.getElementById('userId').value;
+            const neuralData = document.getElementById('neuralData').value;
+            const statusDiv = document.getElementById('registerStatus');
+
+            if (!userId || !neuralData) {
+                showStatus('registerStatus', 'Please fill in all fields', 'error');
+                return;
+            }
+
+            try {
+                const result = await nacf.registerUser(userId, JSON.parse(neuralData));
+                showStatus('registerStatus', `User registered successfully: ${JSON.stringify(result)}`, 'success');
+            } catch (error) {
+                showStatus('registerStatus', `Registration failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function authenticateUser() {
+            const userId = document.getElementById('authUserId').value;
+            const neuralData = document.getElementById('authNeuralData').value;
+            const statusDiv = document.getElementById('authStatus');
+
+            if (!userId || !neuralData) {
+                showStatus('authStatus', 'Please fill in all fields', 'error');
+                return;
+            }
+
+            try {
+                const result = await nacf.authenticateUser(userId, JSON.parse(neuralData));
+                showStatus('authStatus', `Authentication result: ${JSON.stringify(result)}`, 'success');
+            } catch (error) {
+                showStatus('authStatus', `Authentication failed: ${error.message}`, 'error');
+            }
+        }
+
+        function showStatus(elementId, message, type) {
+            const statusDiv = document.getElementById(elementId);
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+            statusDiv.style.display = 'block';
+        }
+
+        // NACF Neural Authentication SDK
+        class NACFClient {
+            constructor(config) {
+                this.baseURL = config.baseURL;
+                this.apiKey = config.apiKey;
+            }
+
+            async registerUser(userId, neuralData) {
+                const response = await fetch(`${this.baseURL}/api/v1/auth`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': this.apiKey
+                    },
+                    body: JSON.stringify({
+                        action: 'register',
+                        user_id: userId,
+                        neural_profile: neuralData
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                return response.json();
+            }
+
+            async authenticateUser(userId, neuralData) {
+                const response = await fetch(`${this.baseURL}/api/v1/auth`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': this.apiKey
+                    },
+                    body: JSON.stringify({
+                        action: 'authenticate',
+                        user_id: userId,
+                        neural_signals: neuralData
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                return response.json();
+            }
+
+            async processSignals(signals) {
+                const response = await fetch(`${this.baseURL}/api/v1/process`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': this.apiKey
+                    },
+                    body: JSON.stringify({
+                        signals: signals
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                return response.json();
+            }
+        }
+    </script>
+</body>
+</html>

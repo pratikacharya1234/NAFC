@@ -26,7 +26,7 @@ spec:
       serviceAccountName: auth-service
       containers:
       - name: auth-service
-        image: registry.gitlab.com/your-org/nacf/auth-service:${AUTH_SERVICE_TAG:-latest}
+        image: nginx:latest
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8000
