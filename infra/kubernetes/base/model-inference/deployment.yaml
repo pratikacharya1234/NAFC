@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: model-inference
+  labels:
+    app.kubernetes.io/name: model-inference
+    app.kubernetes.io/component: inference
+    app.kubernetes.io/part-of: nacf
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: model-inference
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: model-inference
+        app.kubernetes.io/component: inference
+        app.kubernetes.io/part-of: nacf
+    spec:
+      serviceAccountName: model-inference
+      containers:
+      - name: model-inference
+        image: nacf/model-inference:latest
+        ports:
+        - containerPort: 8001
+          name: http
+        env:
+        - name: REDIS_URL
+          value: "redis://redis:6379"
+        - name: KAFKA_BOOTSTRAP_SERVERS
+          value: "kafka:9092"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: nacf-secrets
+              key: database-url
+        resources:
+          requests:
+            cpu: 500m
+            memory: 1Gi
+          limits:
+            cpu: 2000m
+            memory: 4Gi
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8001
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8001
+          initialDelaySeconds: 10
+          periodSeconds: 10
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app.kubernetes.io/name
+                  operator: In
+                  values:
+                  - model-inference
+              topologyKey: "kubernetes.io/hostname"

@@ -1,0 +1,53 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Common labels
+commonLabels:
+  app.kubernetes.io/part-of: nacf
+  app.kubernetes.io/managed-by: kustomize
+
+# Namespace
+namespace: nacf
+
+# Resources
+resources:
+  - namespace.yaml
+  - redis/service.yaml
+  - redis/statefulset.yaml
+  - postgres/statefulset.yaml
+  - postgres/service.yaml
+  - zookeeper/statefulset.yaml
+  - zookeeper/service.yaml
+  - kafka/statefulset.yaml
+  - kafka/service.yaml
+  - auth-service/deployment.yaml
+  - auth-service/hpa.yaml
+  - auth-service/service.yaml
+  - signal-processor/deployment.yaml
+  - signal-processor/hpa.yaml
+  - signal-processor/service.yaml
+  - model-inference/deployment.yaml
+  - model-inference/hpa.yaml
+  - model-inference/service.yaml
+  - api-gateway/kong.yaml
+  - monitoring/prometheus-deployment.yaml
+  - ingress/ingress.yaml
+
+# Components
+# components:
+#   - ../../components/prometheus
+#   - ../../components/grafana
+#   - ../../components/cert-manager
+
+# Configuration for kustomize
+configMapGenerator:
+  - name: nacf-config
+    behavior: create
+    envs:
+      - configs/common.env
+
+secretGenerator:
+  - name: nacf-secrets
+    behavior: create
+    envs:
+      - configs/secrets.env

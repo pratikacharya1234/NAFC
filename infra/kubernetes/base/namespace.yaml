@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nacf
+  labels:
+    name: nacf
+    istio-injection: enabled

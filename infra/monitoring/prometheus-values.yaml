@@ -1,0 +1,93 @@
+alertmanager:
+  enabled: true
+  config:
+    global:
+      resolve_timeout: 5m
+    route:
+      group_by: ['alertname', 'service']
+      group_wait: 10s
+      group_interval: 5m
+      repeat_interval: 3h
+      receiver: 'slack'
+      routes:
+      - match:
+          severity: critical
+        receiver: 'slack'
+    receivers:
+    - name: 'slack'
+      slack_configs:
+      - api_url: 'https://hooks.slack.com/services/your/slack/webhook/url'
+        channel: '#alerts-nacf'
+        send_resolved: true
+        title: '{{ template "slack.default.title" . }}'
+        text: '{{ template "slack.default.text" . }}'
+        title_link: '{{ template "slack.default.titlelink" . }}'
+
+server:
+  retention: 15d
+  persistentVolume:
+    size: 50Gi
+  resources:
+    limits:
+      cpu: 1
+      memory: 2Gi
+    requests:
+      cpu: 500m
+      memory: 1Gi
+
+alertmanagerFiles:
+  alertmanager.yml:
+    global:
+      slack_api_url: 'https://hooks.slack.com/services/your/slack/webhook/url'
+    route:
+      receiver: 'slack'
+      group_by: ['alertname', 'cluster', 'service']
+    receivers:
+    - name: 'slack'
+      slack_configs:
+      - channel: '#alerts-nacf'
+        send_resolved: true
+        title: '{{ template "slack.default.title" . }}'
+        text: '{{ template "slack.default.text" . }}'
+
+prometheusSpec:
+  retention: 15d
+  retentionSize: "50GiB"
+  ruleSelectorNilUsesHelmValues: false
+  ruleNamespaceSelector: {}
+  serviceMonitorSelectorNilUsesHelmValues: false
+  serviceMonitorNamespaceSelector: {}
+  podMonitorSelectorNilUsesHelmValues: false
+  podMonitorNamespaceSelector: {}
+  resources:
+    limits:
+      cpu: 1
+      memory: 2Gi
+    requests:
+      cpu: 500m
+      memory: 1Gi
+  additionalScrapeConfigs:
+  - job_name: 'istio-mesh'
+    kubernetes_sd_configs:
+    - role: endpoints
+      namespaces:
+        names: ['istio-system']
+    relabel_configs:
+    - source_labels: [__meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]
+      action: keep
+      regex: istio-telemetry;prometheus
+
+  additionalAlertManagerConfigs:
+  - static_configs:
+    - targets: ['alertmanager-operated:9093']
+
+  alerting:
+    alertmanagers:
+    - namespace: monitoring
+      name: alertmanager
+      port: web
+
+  additionalScrapeConfigsSecret:
+    enabled: true
+    name: additional-scrape-configs
+    key: prometheus-additional.yaml

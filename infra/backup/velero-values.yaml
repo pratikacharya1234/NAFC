@@ -1,0 +1,290 @@
+# Velero Helm Chart Configuration
+# Reference: https://github.com/vmware-tanzu/helm-charts/tree/main/charts/velero
+
+# Configuration for the Velero deployment
+configuration:
+  # Backup storage location configuration
+  backupStorageLocation:
+    - name: default
+      provider: aws
+      bucket: nacf-backups
+      config:
+        region: us-west-2
+        s3ForcePathStyle: "true"
+        s3Url: http://minio.minio.svc.cluster.local:9000
+  
+  # Volume snapshot location configuration
+  volumeSnapshotLocation:
+    - name: default
+      provider: aws
+      config:
+        region: us-west-2
+  
+  # Feature flags
+  features: "EnableAPIGroupVersions"
+  
+  # Log level
+  logLevel: info
+
+# S3 compatible storage configuration
+# Using MinIO for on-premises S3-compatible storage
+minio:
+  enabled: true
+  # Credentials for MinIO
+  auth:
+    rootUser: minioadmin
+    rootPassword: minioadmin123
+  # Storage configuration
+  persistence:
+    enabled: true
+    size: 100Gi
+    storageClass: ""
+  # Service configuration
+  service:
+    type: ClusterIP
+    port: 9000
+
+# Backup schedules
+schedules:
+  nacf-daily-backup:
+    schedule: "0 0 * * *"
+    template:
+      ttl: "720h" # 30 days retention
+      includedNamespaces:
+        - nacf
+      storageLocation: default
+      volumeSnapshotLocations:
+        - default
+      hooks: {}
+
+# Restic configuration for pod volume backups
+restic:
+  enabled: true
+  podVolumePath: "/var/lib/kubelet/pods"
+  privileged: true
+
+# Resource requests and limits
+resources:
+  limits:
+    cpu: "1"
+    memory: "512Mi"
+  requests:
+    cpu: "500m"
+    memory: "256Mi"
+
+# Pod security context
+securityContext:
+  fsGroup: 65534
+  runAsUser: 65534
+  runAsNonRoot: true
+
+# Service account configuration
+serviceAccount:
+  server:
+    create: true
+    name: velero-server
+  
+# RBAC configuration
+rbac:
+  create: true
+  clusterRoleName: velero-server
+  serviceAccountName: velero-server
+
+# Pod annotations
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8085"
+  prometheus.io/path: "/metrics"
+
+# Metrics configuration
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    namespace: monitoring
+    interval: 30s
+    scrapeTimeout: 10s
+    additionalLabels:
+      release: prometheus-operator
+
+# Backup Hooks
+backupHooks:
+  pre:
+    - name: pre-backup-hook
+      command:
+        - /bin/sh
+        - -c
+        - |
+          echo "Starting pre-backup tasks..."
+          # Add any pre-backup commands here
+          # e.g., Flush database, freeze filesystems, etc.
+      timeout: 5m
+  
+  post:
+    - name: post-backup-hook
+      command:
+        - /bin/sh
+        - -c
+        - |
+          echo "Starting post-backup tasks..."
+          # Add any post-backup commands here
+          # e.g., Unfreeze filesystems, send notifications, etc.
+      timeout: 5m
+
+# Restore hooks
+restoreHooks:
+  pre:
+    - name: pre-restore-hook
+      command:
+        - /bin/sh
+        - -c
+        - |
+          echo "Starting pre-restore tasks..."
+          # Add any pre-restore commands here
+      timeout: 5m
+  
+  post:
+    - name: post-restore-hook
+      command:
+        - /bin/sh
+        - -c
+        - |
+          echo "Starting post-restore tasks..."
+          # Add any post-restore commands here
+      timeout: 5m
+
+# Pod disruption budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Affinity rules for high availability
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - velero
+          topologyKey: kubernetes.io/hostname
+
+# Tolerations for node selection
+tolerations: []
+
+# Node selector for pod placement
+nodeSelector: {}
+
+# Additional environment variables
+env:
+  - name: AWS_SHARED_CREDENTIALS_FILE
+    value: /credentials/cloud
+  - name: VELERO_SCRATCH_DIR
+    value: /scratch
+
+# Volume mounts for configuration
+volumeMounts:
+  - name: plugins
+    mountPath: /plugins
+  - name: scratch
+    mountPath: /scratch
+
+# Volumes for configuration
+volumes:
+  - name: plugins
+    emptyDir: {}
+  - name: scratch
+    emptyDir: {}
+
+# Configuration for backup storage credentials
+credentials:
+  useSecret: true
+  secretContents:
+    cloud: |
+      [default]
+      aws_access_key_id=minioadmin
+      aws_secret_access_key=minioadmin123
+  existingSecret: ""
+  extraSecretRef: ""
+
+# Configuration for backup storage bucket
+bucket:
+  name: nacf-backups
+  prefix: velero
+  create: true
+  public: false
+  forceDestroy: false
+  versioning: true
+  objectLocking: false
+
+# Configuration for backup storage provider
+provider: aws
+
+# Configuration for backup storage region
+region: us-west-2
+
+# Configuration for backup storage endpoint
+endpoint: http://minio.minio.svc.cluster.local:9000
+
+# Configuration for backup storage s3ForcePathStyle
+s3ForcePathStyle: true
+
+# Configuration for backup storage s3Url
+s3Url: http://minio.minio.svc.cluster.local:9000
+
+# Configuration for backup storage s3Region
+s3Region: us-west-2
+
+# Configuration for backup storage s3Bucket
+s3Bucket: nacf-backups
+
+# Configuration for backup storage s3Prefix
+s3Prefix: velero
+
+# Configuration for backup storage s3Url
+s3Url: http://minio.minio.svc.cluster.local:9000
+
+# Configuration for backup storage s3ForcePathStyle
+s3ForcePathStyle: true
+
+# Configuration for backup storage s3Region
+s3Region: us-west-2
+
+# Configuration for backup storage s3Bucket
+s3Bucket: nacf-backups
+
+# Configuration for backup storage s3Prefix
+s3Prefix: velero
+
+# Configuration for backup storage s3Url
+s3Url: http://minio.minio.svc.cluster.local:9000
+
+# Configuration for backup storage s3ForcePathStyle
+s3ForcePathStyle: true
+
+# Configuration for backup storage s3Region
+s3Region: us-west-2
+
+# Configuration for backup storage s3Bucket
+s3Bucket: nacf-backups
+
+# Configuration for backup storage s3Prefix
+s3Prefix: velero
+
+# Configuration for backup storage s3Url
+s3Url: http://minio.minio.svc.cluster.local:9000
+
+# Configuration for backup storage s3ForcePathStyle
+s3ForcePathStyle: true
+
+# Configuration for backup storage s3Region
+s3Region: us-west-2
+
+# Configuration for backup storage s3Bucket
+s3Bucket: nacf-backups
+
+# Configuration for backup storage s3Prefix
+s3Prefix: velero
